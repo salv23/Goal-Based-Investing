@@ -1,0 +1,72 @@
+import numpy as np
+
+# Function to calculate portfolio return
+def calculate_portfolio_return(weights, returns):
+    return np.dot(weights, returns)
+
+# Function to calculate portfolio risk (standard deviation)
+def calculate_portfolio_risk(weights, cov_matrix):
+    return np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
+
+# Function to calculate Maximum Drawdown (MDD)
+def calculate_mdd(returns):
+    cum_returns = np.cumprod(1 + returns)
+    peak = np.maximum.accumulate(cum_returns)
+    drawdown = (cum_returns - peak) / peak
+    mdd = drawdown.min()
+    return mdd
+
+# Function to simulate portfolio performance and calculate probability of not achieving the target return
+def simulate_portfolio(weights, mean_returns, cov_matrix, num_simulations, target_return):
+    simulated_returns = np.random.multivariate_normal(mean_returns, cov_matrix, num_simulations)
+    portfolio_returns = np.dot(simulated_returns, weights)
+    prob_not_achieving_target = np.mean(portfolio_returns < target_return)
+    mdd = calculate_mdd(portfolio_returns)
+    return prob_not_achieving_target, mdd
+
+# Asset class parameters (mean returns and covariance matrix)
+mean_returns = np.array([0.08, 0.04, 0.06, 0.05, 0.07])
+cov_matrix = np.array([
+    [0.0225, 0.0008, 0.0015, 0.0010, 0.0020],
+    [0.0008, 0.0025, 0.0010, 0.0012, 0.0015],
+    [0.0015, 0.0010, 0.0100, 0.0020, 0.0025],
+    [0.0010, 0.0012, 0.0020, 0.0064, 0.0030],
+    [0.0020, 0.0015, 0.0025, 0.0030, 0.0144]
+])
+
+# Define different scenarios with initial weights and target returns
+scenarios = {
+    "Bear Market Reallocation": {
+        "weights": [0.30, 0.40, 0.10, 0.10, 0.10],
+        "new_weights": [0.50, 0.30, 0.05, 0.10, 0.05],
+        "target_return": 0.05
+    },
+    "Entrepreneur Rebalancing": {
+        "weights": [0.10, 0.10, 0.00, 0.00, 0.80],
+        "new_weights": [0.24, 0.24, 0.06, 0.03, 0.43],
+        "target_return": 0.05
+    },
+    "Goal-Based Allocation": {
+        "weights": [0.30, 0.50, 0.10, 0.05, 0.05],
+        "new_weights": [0.40, 0.30, 0.10, 0.10, 0.10],
+        "target_return": 0.055
+    }
+}
+
+# Number of simulations
+num_simulations = 10000
+
+# Run simulations and print results
+for scenario, data in scenarios.items():
+    print(f"Scenario: {scenario}")
+    prob_not_achieving_target, mdd = simulate_portfolio(data["weights"], mean_returns, cov_matrix, num_simulations, data["target_return"])
+    new_prob_not_achieving_target, new_mdd = simulate_portfolio(data["new_weights"], mean_returns, cov_matrix, num_simulations, data["target_return"])
+    
+    print(f"  Initial Allocation: {data['weights']}")
+    print(f"    Probability of not achieving target return: {prob_not_achieving_target:.2%}")
+    print(f"    Maximum Drawdown: {mdd:.2%}")
+    
+    print(f"  New Allocation: {data['new_weights']}")
+    print(f"    Probability of not achieving target return: {new_prob_not_achieving_target:.2%}")
+    print(f"    Maximum Drawdown: {new_mdd:.2%}")
+    print()
